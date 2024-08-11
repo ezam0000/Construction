@@ -8,46 +8,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
     try:
-        if 'image_url' in request.form:
-            image_url = request.form['image_url']
-        elif 'image' in request.files:
-            file = request.files['image']
-            file_content = file.read()
-            base64_image = base64.b64encode(file_content).decode('utf-8')
-            image_url = f"data:image/jpeg;base64,{base64_image}"
-        else:
-            return jsonify({"error": "No image provided"}), 400
-
-        system_message = "You are an expert in construction inspection and property appraisal. Analyze the provided image with a focus on professional assessment, safety concerns, and regulatory compliance. Provide a detailed, objective report suitable for official documentation."
-
+        data = request.json
         response = client.chat.completions.create(
             model="gpt-4-vision-preview",
-            messages=[
-                {"role": "system", "content": system_message},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Conduct a detailed analysis of this construction or property image. Identify key elements, potential issues, and notable features relevant to a professional inspection or appraisal. Include observations on structural components, materials used, condition of visible elements, and any apparent code compliance concerns."},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": image_url},
-                        },
-                    ],
-                }
-            ],
-            max_tokens=500,
+            messages=data['messages'],
+            max_tokens=data['max_tokens']
         )
-        result = response.choices[0].message.content
-        return jsonify({"result": result})
+        return jsonify({"result": response.choices[0].message.content})
     except Exception as e:
         app.logger.error(f"An error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500

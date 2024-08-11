@@ -26,20 +26,40 @@ function App() {
     setError('');
     setResult('');
     setIsLoading(true);
-    const formData = new FormData();
     
+    let content = [];
     if (imageUrl) {
-      formData.append('image_url', imageUrl);
+      content = [
+        { type: "text", text: "What's in this image?" },
+        { type: "image_url", image_url: { url: imageUrl } }
+      ];
     } else if (file) {
-      formData.append('image', file);
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        content = [
+          { type: "text", text: "What's in this image?" },
+          { type: "image_url", image_url: { url: reader.result } }
+        ];
+        sendRequest(content);
+      };
+      return;
     }
-  
+
+    sendRequest(content);
+  };
+
+  const sendRequest = async (content) => {
     try {
-      const response = await axios({
-        method: 'post',
-        url: `${process.env.REACT_APP_API_URL}/analyze`,
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, {
+        model: "gpt-4-vision-preview",
+        messages: [
+          {
+            role: "user",
+            content: content
+          }
+        ],
+        max_tokens: 300
       });
       setResult(formatResult(response.data.result));
     } catch (error) {
@@ -50,7 +70,6 @@ function App() {
       setIsLoading(false);
     }
   };
-  
 
   const formatResult = (text) => {
     return text.split('\n').map((line, index) => (
@@ -60,9 +79,7 @@ function App() {
 
   const testBackend = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`, {
-        withCredentials: true,
-      });
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`);
       alert(response.data.message);
     } catch (error) {
       console.error('Full error object:', error);
