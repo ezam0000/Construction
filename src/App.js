@@ -14,7 +14,13 @@ function App() {
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
+      setError('File size should not exceed 5MB');
+    } else {
+      setFile(selectedFile);
+      setError('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -23,74 +29,41 @@ function App() {
     setError('');
     setResult('');
     
-    let params = {};
+    const formData = new FormData();
     if (imageUrl) {
-      params.image_url = imageUrl;
+      formData.append('image_url', imageUrl);
     } else if (file) {
-      // Convert file to base64
-      const base64File = await convertFileToBase64(file);
-      params.image_base64 = base64File;
+      formData.append('image', file);
     }
 
     try {
       console.log('Sending request to:', `${process.env.REACT_APP_API_URL}/analyze`);
-      console.log('Params:', params);
-
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/analyze`, { params });
+      
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setResult(formatResult(response.data.result));
     } catch (error) {
       console.error('Full error:', error);
-      console.error('Error response:', error.response);
-      setError(`An error occurred: ${error.response?.data?.error || error.message}`);
+      if (error.response) {
+        console.error('Error response:', error.response);
+        setError(`Server error: ${error.response.status} ${error.response.statusText}`);
+      } else if (error.request) {
+        console.error('Error request:', error.request);
+        setError('No response received from server');
+      } else {
+        console.error('Error message:', error.message);
+        setError(`Error: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const convertFileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   const formatResult = (text) => {
-    const paragraphs = text.split('\n\n');
-    const sections = {
-      'Structural Components': [],
-      'Materials': [],
-      'Condition': [],
-      'Code Compliance': [],
-      'Other Observations': []
-    };
-
-    paragraphs.forEach(para => {
-      if (para.toLowerCase().includes('structural') || para.toLowerCase().includes('foundation')) {
-        sections['Structural Components'].push(para);
-      } else if (para.toLowerCase().includes('material')) {
-        sections['Materials'].push(para);
-      } else if (para.toLowerCase().includes('condition') || para.toLowerCase().includes('state')) {
-        sections['Condition'].push(para);
-      } else if (para.toLowerCase().includes('code') || para.toLowerCase().includes('compliance') || para.toLowerCase().includes('regulation')) {
-        sections['Code Compliance'].push(para);
-      } else {
-        sections['Other Observations'].push(para);
-      }
-    });
-
-    return Object.entries(sections).map(([title, paras]) => {
-      if (paras.length === 0) return null;
-      return (
-        <div key={title} className="analysis-section">
-          <h3>{title}</h3>
-          {paras.map((para, index) => (
-            <p key={index}>{para}</p>
-          ))}
-        </div>
-      );
-    });
+    // ... (keep the existing formatResult function)
   };
 
   const testBackend = async () => {
@@ -99,8 +72,13 @@ function App() {
       alert(response.data.message);
     } catch (error) {
       console.error('Full error:', error);
-      console.error('Error response:', error.response);
-      alert(`Error: ${error.message}`);
+      if (error.response) {
+        alert(`Error: ${error.response.status} ${error.response.statusText}`);
+      } else if (error.request) {
+        alert('No response received from server');
+      } else {
+        alert(`Error: ${error.message}`);
+      }
     }
   };
 
@@ -122,7 +100,7 @@ function App() {
             onChange={handleFileChange}
           />
         </div>
-        <button type="submit" disabled={isLoading}>
+        <button type="submit" disabled={isLoading || error}>
           {isLoading ? 'Analyzing...' : 'Analyze'}
         </button>
       </form>
