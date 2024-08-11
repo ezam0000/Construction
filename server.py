@@ -3,11 +3,16 @@ from flask_cors import CORS
 from openai import OpenAI
 import os
 import base64
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST"]}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -7,6 +7,11 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    console.log('API URL:', process.env.REACT_APP_API_URL);
+  }, []);
 
   const handleUrlChange = (e) => {
     setImageUrl(e.target.value);
@@ -20,6 +25,7 @@ function App() {
     e.preventDefault();
     setError('');
     setResult('');
+    setIsLoading(true);
     const formData = new FormData();
     
     if (imageUrl) {
@@ -31,11 +37,15 @@ function App() {
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
       });
       setResult(formatResult(response.data.result));
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Full error object:', error);
+      console.error('Error response:', error.response);
       setError(`An error occurred: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,10 +57,13 @@ function App() {
 
   const testBackend = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`, {
+        withCredentials: true,
+      });
       alert(response.data.message);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Full error object:', error);
+      console.error('Error response:', error.response);
       alert(`Error: ${error.message}`);
     }
   };
@@ -73,10 +86,13 @@ function App() {
             onChange={handleFileChange}
           />
         </div>
-        <button type="submit">Analyze</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Analyzing...' : 'Analyze'}
+        </button>
       </form>
       <button onClick={testBackend}>Test Backend</button>
       {error && <div className="error-message">{error}</div>}
+      {isLoading && <div>Loading...</div>}
       {result && (
         <div className="analysis-result">
           <h2>Analysis Result:</h2>
