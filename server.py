@@ -1,10 +1,10 @@
+import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from openai import OpenAI
-import os
 import base64
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
