@@ -57,7 +57,7 @@ def serve(path):
     if path != "" and os.path.exists(app.static_folder + '/' + path):
         return send_from_directory(app.static_folder, path)
     else:
-        return send_from_directory(app.static_folder, 'index.html')
+        return jsonify({"message": "Welcome to the Construction Image Analyzer API"}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
