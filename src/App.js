@@ -33,11 +33,13 @@ function App() {
     } else if (file) {
       formData.append('image', file);
     }
-
+  
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
+      const response = await axios({
+        method: 'post',
+        url: `${process.env.REACT_APP_API_URL}/analyze`,
+        data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
-        withCredentials: true,
       });
       setResult(formatResult(response.data.result));
     } catch (error) {
@@ -48,6 +50,7 @@ function App() {
       setIsLoading(false);
     }
   };
+  
 
   const formatResult = (text) => {
     return text.split('\n').map((line, index) => (
