@@ -27,41 +27,23 @@ function App() {
     setResult('');
     setIsLoading(true);
     
-    let content = [];
-    if (imageUrl) {
-      content = [
-        { type: "text", text: "What's in this image?" },
-        { type: "image_url", image_url: { url: imageUrl } }
-      ];
-    } else if (file) {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        content = [
-          { type: "text", text: "What's in this image?" },
-          { type: "image_url", image_url: { url: reader.result } }
-        ];
-        sendRequest(content);
-      };
-      return;
-    }
-
-    sendRequest(content);
-  };
-
-  const sendRequest = async (content) => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, {
-        model: "gpt-4-vision-preview",
-        messages: [
-          {
-            role: "user",
-            content: content
-          }
-        ],
-        max_tokens: 300
+      let fileId;
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('purpose', 'assistants');
+        const uploadResponse = await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        fileId = uploadResponse.data.file_id;
+      }
+
+      const analyzeResponse = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, {
+        image_url: imageUrl,
+        file_id: fileId
       });
-      setResult(formatResult(response.data.result));
+      setResult(formatResult(analyzeResponse.data.result));
     } catch (error) {
       console.error('Full error object:', error);
       console.error('Error response:', error.response);
