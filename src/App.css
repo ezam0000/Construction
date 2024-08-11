@@ -3,47 +3,68 @@
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 h1 {
   text-align: center;
   color: #333;
+  margin-bottom: 30px;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
   margin-bottom: 20px;
 }
 
 input[type="text"], input[type="file"] {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 16px;
 }
 
 button {
-  padding: 10px;
+  padding: 12px;
   background-color: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 10px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
   background-color: #0056b3;
 }
 
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #d9534f;
+  background-color: #f2dede;
+  border: 1px solid #ebccd1;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
 .analysis-result {
-  background-color: #f8f9fa;
+  background-color: #ffffff;
   border: 1px solid #e9ecef;
   border-radius: 4px;
   padding: 20px;
   margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .analysis-section {
@@ -52,12 +73,20 @@ button:hover {
 
 .analysis-section h3 {
   color: #495057;
-  border-bottom: 1px solid #ced4da;
+  border-bottom: 2px solid #007bff;
   padding-bottom: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .analysis-section p {
   margin-bottom: 10px;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #333;
+}
+
+.loading {
+  text-align: center;
+  color: #007bff;
+  font-weight: bold;
+  margin: 20px 0;
 }
