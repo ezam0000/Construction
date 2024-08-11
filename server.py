@@ -1,58 +1,48 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from openai import OpenAI
 import os
-from dotenv import load_dotenv
+import base64
 
-load_dotenv()
+app = Flask(__name__, static_folder='static')
+CORS(app)
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-    if file:
-        response = client.files.create(
-            file=file,
-            purpose='assistants'
-        )
-        return jsonify({"file_id": response.id})
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
-    print("Received request at /analyze")
-    print(request.form)
-    print(request.files)
     try:
-        data = request.json
-        messages = [{"role": "user", "content": "What's in this image?"}]
-        
-        if data.get('image_url'):
-            messages[0]["content"] = [
-                {"type": "text", "text": "What's in this image?"},
-                {"type": "image_url", "image_url": {"url": data['image_url']}}
-            ]
-        elif data.get('file_id'):
-            messages[0]["content"] = [
-                {"type": "text", "text": "What's in this image?"},
-                {"type": "image_file", "image_file": {"file_id": data['file_id']}}
-            ]
+        if 'image_url' in request.form:
+            image_url = request.form['image_url']
+        elif 'image' in request.files:
+            file = request.files['image']
+            file_content = file.read()
+            base64_image = base64.b64encode(file_content).decode('utf-8')
+            image_url = f"data:image/jpeg;base64,{base64_image}"
         else:
-            return jsonify({"error": "No image URL or file provided"}), 400
+            return jsonify({"error": "No image provided"}), 400
+
+        system_message = "You are an expert in construction inspection and property appraisal. Analyze the provided image with a focus on professional assessment, safety concerns, and regulatory compliance. Provide a detailed, objective report suitable for official documentation."
 
         response = client.chat.completions.create(
             model="gpt-4-vision-preview",
-            messages=messages,
-            max_tokens=300
+            messages=[
+                {"role": "system", "content": system_message},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Conduct a detailed analysis of this construction or property image. Identify key elements, potential issues, and notable features relevant to a professional inspection or appraisal. Include observations on structural components, materials used, condition of visible elements, and any apparent code compliance concerns."},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_url},
+                        },
+                    ],
+                }
+            ],
+            max_tokens=500,
         )
-        return jsonify({"result": response.choices[0].message.content})
+        result = response.choices[0].message.content
+        return jsonify({"result": result})
     except Exception as e:
         app.logger.error(f"An error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -61,5 +51,14 @@ def analyze_image():
 def test():
     return jsonify({"message": "Backend is working"})
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)

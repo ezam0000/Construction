@@ -6,30 +6,19 @@ function App() {
   const [imageUrl, setImageUrl] = useState('');
   const [file, setFile] = useState(null);
   const [result, setResult] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleUrlChange = (e) => {
     setImageUrl(e.target.value);
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.size > 5 * 1024 * 1024) {
-      setError('File size should not exceed 5MB');
-    } else {
-      setFile(selectedFile);
-      setError('');
-    }
+    setFile(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setResult('');
-    
     const formData = new FormData();
+    
     if (imageUrl) {
       formData.append('image_url', imageUrl);
     } else if (file) {
@@ -37,48 +26,58 @@ function App() {
     }
 
     try {
-      console.log('Sending request to:', `${process.env.REACT_APP_API_URL}/analyze`);
-      
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post('/analyze', formData);
       setResult(formatResult(response.data.result));
     } catch (error) {
-      console.error('Full error:', error);
-      if (error.response) {
-        console.error('Error response:', error.response);
-        setError(`Server error: ${error.response.status} ${error.response.statusText}`);
-      } else if (error.request) {
-        console.error('Error request:', error.request);
-        setError('No response received from server');
-      } else {
-        console.error('Error message:', error.message);
-        setError(`Error: ${error.message}`);
-      }
-    } finally {
-      setIsLoading(false);
+      console.error('Error:', error);
+      setResult(`An error occurred: ${error.response?.data?.error || error.message}`);
     }
   };
 
   const formatResult = (text) => {
-    // ... (keep the existing formatResult function)
+    const paragraphs = text.split('\n\n');
+    const sections = {
+      'Structural Components': [],
+      'Materials': [],
+      'Condition': [],
+      'Code Compliance': [],
+      'Other Observations': []
+    };
+
+    paragraphs.forEach(para => {
+      if (para.toLowerCase().includes('structural') || para.toLowerCase().includes('foundation')) {
+        sections['Structural Components'].push(para);
+      } else if (para.toLowerCase().includes('material')) {
+        sections['Materials'].push(para);
+      } else if (para.toLowerCase().includes('condition') || para.toLowerCase().includes('state')) {
+        sections['Condition'].push(para);
+      } else if (para.toLowerCase().includes('code') || para.toLowerCase().includes('compliance') || para.toLowerCase().includes('regulation')) {
+        sections['Code Compliance'].push(para);
+      } else {
+        sections['Other Observations'].push(para);
+      }
+    });
+
+    return Object.entries(sections).map(([title, paras]) => {
+      if (paras.length === 0) return null;
+      return (
+        <div key={title} className="analysis-section">
+          <h3>{title}</h3>
+          {paras.map((para, index) => (
+            <p key={index}>{para}</p>
+          ))}
+        </div>
+      );
+    });
   };
 
   const testBackend = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`);
+      const response = await axios.get('/test');
       alert(response.data.message);
     } catch (error) {
-      console.error('Full error:', error);
-      if (error.response) {
-        alert(`Error: ${error.response.status} ${error.response.statusText}`);
-      } else if (error.request) {
-        alert('No response received from server');
-      } else {
-        alert(`Error: ${error.message}`);
-      }
+      console.error('Error:', error);
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -100,13 +99,9 @@ function App() {
             onChange={handleFileChange}
           />
         </div>
-        <button type="submit" disabled={isLoading || error}>
-          {isLoading ? 'Analyzing...' : 'Analyze'}
-        </button>
+        <button type="submit">Analyze</button>
       </form>
       <button onClick={testBackend}>Test Backend</button>
-      {error && <div className="error-message">{error}</div>}
-      {isLoading && <div>Loading...</div>}
       {result && (
         <div className="analysis-result">
           <h2>Analysis Result:</h2>
