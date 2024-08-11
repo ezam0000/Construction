@@ -3,9 +3,13 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from openai import OpenAI
 import base64
+import logging
 
 app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -54,10 +58,17 @@ def test():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
+    app.logger.info(f"Requested path: {path}")
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
+        app.logger.info(f"Serving index.html for path: {path}")
         return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
+    app.logger.error(f"404 error: {e}")
+    return jsonify(error=str(e)), 404
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
