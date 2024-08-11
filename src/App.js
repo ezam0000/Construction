@@ -40,7 +40,9 @@ function App() {
   };
 
   const formatResult = (text) => {
-    // ... (keep the existing formatResult function as is)
+    return text.split('\n').map((line, index) => (
+      <p key={index}>{line}</p>
+    ));
   };
 
   const testBackend = async () => {

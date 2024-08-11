@@ -5,7 +5,7 @@ import os
 import base64
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for testing
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST"]}})
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
@@ -25,7 +25,7 @@ def analyze_image():
         system_message = "You are an expert in construction inspection and property appraisal. Analyze the provided image with a focus on professional assessment, safety concerns, and regulatory compliance. Provide a detailed, objective report suitable for official documentation."
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4-vision-preview",
             messages=[
                 {"role": "system", "content": system_message},
                 {
@@ -52,4 +52,4 @@ def test():
     return jsonify({"message": "Backend is working"})
 
 if __name__ == '__main__':
-    app.run(ssl_context='adhoc', debug=True)  # Use 'adhoc' for testing, replace with your SSL cert in production
+    app.run(debug=True)
