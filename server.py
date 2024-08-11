@@ -1,21 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
-from dotenv import load_dotenv
 import os
 import base64
 
-load_dotenv()
-
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
-# Allow CORS for specific domains and subdomains
-CORS(app, resources={r"/*": {"origins": [
-    "http://localhost:3000",
-    "https://*.vercel.app"  # Allow all subdomains of vercel.app
-]}})
-
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key="your-api-key-here")
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
@@ -61,5 +53,3 @@ def test():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
-print("OpenAI API Key:", os.environ.get("OPENAI_API_KEY"))
