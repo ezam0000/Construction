@@ -29,9 +29,16 @@ function App() {
     } else if (file) {
       formData.append('image', file);
     }
-
+  
+    console.log('Sending request to:', `${process.env.REACT_APP_API_URL}/analyze`);
+    console.log('FormData:', formData);
+  
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       setResult(formatResult(response.data.result));
     } catch (error) {
       console.error('Full error:', error);
@@ -41,6 +48,7 @@ function App() {
       setIsLoading(false);
     }
   };
+  
 
   const formatResult = (text) => {
     const paragraphs = text.split('\n\n');
