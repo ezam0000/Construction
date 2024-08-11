@@ -6,6 +6,7 @@ function App() {
   const [imageUrl, setImageUrl] = useState('');
   const [file, setFile] = useState(null);
   const [result, setResult] = useState('');
+  const [error, setError] = useState('');
 
   const handleUrlChange = (e) => {
     setImageUrl(e.target.value);
@@ -17,6 +18,8 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setResult('');
     const formData = new FormData();
     
     if (imageUrl) {
@@ -26,11 +29,13 @@ function App() {
     }
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setResult(formatResult(response.data.result));
     } catch (error) {
       console.error('Error:', error);
-      setResult(`An error occurred: ${error.response?.data?.error || error.message}`);
+      setError(`An error occurred: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -69,6 +74,7 @@ function App() {
         <button type="submit">Analyze</button>
       </form>
       <button onClick={testBackend}>Test Backend</button>
+      {error && <div className="error-message">{error}</div>}
       {result && (
         <div className="analysis-result">
           <h2>Analysis Result:</h2>

@@ -5,9 +5,9 @@ import os
 import base64
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for testing
 
-client = OpenAI(api_key="your-api-key-here")
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
@@ -52,4 +52,4 @@ def test():
     return jsonify({"message": "Backend is working"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(ssl_context='adhoc', debug=True)  # Use 'adhoc' for testing, replace with your SSL cert in production
