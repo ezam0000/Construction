@@ -4,7 +4,7 @@ from flask_cors import CORS
 from openai import OpenAI
 import base64
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -57,7 +57,7 @@ def serve(path):
     if path != "" and os.path.exists(app.static_folder + '/' + path):
         return send_from_directory(app.static_folder, path)
     else:
-        return jsonify({"message": "Welcome to the Construction Image Analyzer API"}), 200
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
