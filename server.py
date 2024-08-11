@@ -61,3 +61,5 @@ def test():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
+print("OpenAI API Key:", os.environ.get("OPENAI_API_KEY"))
