@@ -27,6 +27,9 @@ def upload_file():
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
+    print("Received request at /analyze")
+    print(request.form)
+    print(request.files)
     try:
         data = request.json
         messages = [{"role": "user", "content": "What's in this image?"}]

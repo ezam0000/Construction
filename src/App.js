@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -6,12 +6,8 @@ function App() {
   const [imageUrl, setImageUrl] = useState('');
   const [file, setFile] = useState(null);
   const [result, setResult] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    console.log('API URL:', process.env.REACT_APP_API_URL);
-  }, []);
+  const [error, setError] = useState('');
 
   const handleUrlChange = (e) => {
     setImageUrl(e.target.value);
@@ -23,29 +19,22 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
     setResult('');
-    setIsLoading(true);
+    const formData = new FormData();
     
-    try {
-      let fileId;
-      if (file) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('purpose', 'assistants');
-        const uploadResponse = await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        fileId = uploadResponse.data.file_id;
-      }
+    if (imageUrl) {
+      formData.append('image_url', imageUrl);
+    } else if (file) {
+      formData.append('image', file);
+    }
 
-      const analyzeResponse = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, {
-        image_url: imageUrl,
-        file_id: fileId
-      });
-      setResult(formatResult(analyzeResponse.data.result));
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData);
+      setResult(formatResult(response.data.result));
     } catch (error) {
-      console.error('Full error object:', error);
+      console.error('Full error:', error);
       console.error('Error response:', error.response);
       setError(`An error occurred: ${error.response?.data?.error || error.message}`);
     } finally {
@@ -54,9 +43,40 @@ function App() {
   };
 
   const formatResult = (text) => {
-    return text.split('\n').map((line, index) => (
-      <p key={index}>{line}</p>
-    ));
+    const paragraphs = text.split('\n\n');
+    const sections = {
+      'Structural Components': [],
+      'Materials': [],
+      'Condition': [],
+      'Code Compliance': [],
+      'Other Observations': []
+    };
+
+    paragraphs.forEach(para => {
+      if (para.toLowerCase().includes('structural') || para.toLowerCase().includes('foundation')) {
+        sections['Structural Components'].push(para);
+      } else if (para.toLowerCase().includes('material')) {
+        sections['Materials'].push(para);
+      } else if (para.toLowerCase().includes('condition') || para.toLowerCase().includes('state')) {
+        sections['Condition'].push(para);
+      } else if (para.toLowerCase().includes('code') || para.toLowerCase().includes('compliance') || para.toLowerCase().includes('regulation')) {
+        sections['Code Compliance'].push(para);
+      } else {
+        sections['Other Observations'].push(para);
+      }
+    });
+
+    return Object.entries(sections).map(([title, paras]) => {
+      if (paras.length === 0) return null;
+      return (
+        <div key={title} className="analysis-section">
+          <h3>{title}</h3>
+          {paras.map((para, index) => (
+            <p key={index}>{para}</p>
+          ))}
+        </div>
+      );
+    });
   };
 
   const testBackend = async () => {
@@ -64,7 +84,7 @@ function App() {
       const response = await axios.get(`${process.env.REACT_APP_API_URL}/test`);
       alert(response.data.message);
     } catch (error) {
-      console.error('Full error object:', error);
+      console.error('Full error:', error);
       console.error('Error response:', error.response);
       alert(`Error: ${error.message}`);
     }
