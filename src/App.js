@@ -22,23 +22,21 @@ function App() {
     setIsLoading(true);
     setError('');
     setResult('');
-    const formData = new FormData();
     
+    let params = {};
     if (imageUrl) {
-      formData.append('image_url', imageUrl);
+      params.image_url = imageUrl;
     } else if (file) {
-      formData.append('image', file);
+      // Convert file to base64
+      const base64File = await convertFileToBase64(file);
+      params.image_base64 = base64File;
     }
-  
-    console.log('Sending request to:', `${process.env.REACT_APP_API_URL}/analyze`);
-    console.log('FormData:', formData);
-  
+
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/analyze`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      console.log('Sending request to:', `${process.env.REACT_APP_API_URL}/analyze`);
+      console.log('Params:', params);
+
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/analyze`, { params });
       setResult(formatResult(response.data.result));
     } catch (error) {
       console.error('Full error:', error);
@@ -48,7 +46,15 @@ function App() {
       setIsLoading(false);
     }
   };
-  
+
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   const formatResult = (text) => {
     const paragraphs = text.split('\n\n');
