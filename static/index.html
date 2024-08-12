@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Image Analyzer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Construction Image Analyzer</h1>
+        <form id="analyzeForm">
+            <div class="form-group">
+                <label for="imageUrl">Enter Image URL</label>
+                <input type="text" class="form-control" id="imageUrl" placeholder="Enter image URL">
+            </div>
+            <div class="form-group">
+                <label for="imageFile">Upload Image File</label>
+                <input type="file" class="form-control-file" id="imageFile">
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+
+        <div id="result" class="mt-4"></div>
+    </div>
+
+    <script>
+        document.getElementById('analyzeForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const imageUrl = document.getElementById('imageUrl').value;
+            const fileInput = document.getElementById('imageFile');
+            const formData = new FormData();
+
+            if (imageUrl) {
+                formData.append('image_url', imageUrl);
+            } else if (fileInput.files.length > 0) {
+                formData.append('image', fileInput.files[0]);
+            } else {
+                alert('Please provide an image URL or upload a file.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    displayResult(data.result);
+                } else {
+                    displayResult(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                displayResult(`Error: ${error.message}`);
+            }
+        };
+
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<h2>Analysis Result:</h2><pre>${result}</pre>`;
+        }
+    </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ from openai import OpenAI
 import base64
 import logging
 
-app = Flask(__name__, static_folder='build', static_url_path='')
+app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
 # Set up logging
@@ -29,7 +29,7 @@ def analyze_image():
         system_message = "You are an expert in construction inspection and property appraisal. Analyze the provided image with a focus on professional assessment, safety concerns, and regulatory compliance. Provide a detailed, objective report suitable for official documentation."
 
         response = client.chat.completions.create(
-            model="gpt-4-vision-preview",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_message},
                 {
@@ -58,18 +58,11 @@ def test():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    app.logger.info(f"Requested path: {path}")
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
-        app.logger.info(f"Serving index.html for path: {path}")
         return send_from_directory(app.static_folder, 'index.html')
 
-@app.errorhandler(404)
-def not_found(e):
-    app.logger.error(f"404 error: {e}")
-    return jsonify(error=str(e)), 404
-
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     app.run(host='0.0.0.0', port=port)
