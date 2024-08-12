@@ -29,7 +29,7 @@ def analyze_image():
         system_message = "You are an expert in construction inspection and property appraisal. Analyze the provided image with a focus on professional assessment, safety concerns, and regulatory compliance. Provide a detailed, objective report suitable for official documentation."
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini",  # this is the correct model , no other 
             messages=[
                 {"role": "system", "content": system_message},
                 {
@@ -58,11 +58,13 @@ def test():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    app.logger.info(f"Requested path: {path}")  # Log the requested path
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
+        app.logger.info("Serving index.html")  # Log serving the index.html
         return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 5000))  # Use the correct port
     app.run(host='0.0.0.0', port=port)
