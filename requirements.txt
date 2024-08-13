@@ -2,3 +2,5 @@ flask
 flask-cors
 gunicorn
 openai
+Pillow>=10.0.0
+
