@@ -117,11 +117,24 @@ def analyze_image():
 
         # Get the result from OpenAI response
         result = response.choices[0].message.content
-        return jsonify({"result": result})
+
+        # Format the output for clarity
+        formatted_output = format_output(result)
+
+        return jsonify({"result": formatted_output})
 
     except Exception as e:
         app.logger.error(f"An error occurred: {str(e)}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
+def format_output(result):
+    """
+    Format the output for better readability.
+    This function can be customized to parse the result and extract key information.
+    """
+    # Example of basic formatting - this can be customized as needed
+    formatted_result = result.strip().replace("\n", "<br>")  # Replace newlines with HTML line breaks
+    return formatted_result
 
 @app.route('/test', methods=['GET'])
 def test():
@@ -146,5 +159,5 @@ def serve(path):
 
 if __name__ == '__main__':
     # Use the PORT environment variable for Heroku
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 5002))
     app.run(host='0.0.0.0', port=port)
